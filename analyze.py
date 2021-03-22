@@ -207,7 +207,7 @@ def driver():
 
     if not os.path.exists('output'):
         os.mkdir('output')
-    print(json.dumps(word_dictionary))
+
     graphs.bar_graph(
         word_dictionary, 25, 'Uses',
         'Most used words in ' + str(number_of_messages) + ' messages in ' + file_name,
