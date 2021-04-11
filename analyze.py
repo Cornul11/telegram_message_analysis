@@ -5,6 +5,8 @@ import sys
 from collections import Counter, OrderedDict
 
 import emoji
+import nltk
+from nltk.corpus import stopwords
 from progress.bar import Bar
 
 import graphs
@@ -40,8 +42,7 @@ When the entire list of messages is covered, return the frequency dict.
 
 
 def get_word_frequency(message_list):
-    with open('commonWords.txt', 'r') as word_file:
-        common_words_list = word_file.read()
+    common_words_list = set(stopwords.words('english'))
     clean_word = re.compile(r'[а-яА-Яa-zA-Z0-9]+')
     frequency_dictionary = Counter()
     for messages in message_list:
@@ -239,5 +240,19 @@ def driver():
     )
 
 
+"""
+Checks whether the environment has the stopwords resource
+already installed, if not, downloads them.
+"""
+
+
+def prepare_stop_words():
+    try:
+        nltk.data.find('corpora/stopwords.zip')
+    except LookupError:
+        nltk.download('stopwords')
+
+
 if __name__ == "__main__":
+    prepare_stop_words()
     driver()
