@@ -42,7 +42,7 @@ When the entire list of messages is covered, return the frequency dict.
 
 
 def get_word_frequency(message_list):
-    common_words_list = set(stopwords.words('english'))
+    stop_words_list = set(stopwords.words('english'))
     clean_word = re.compile(r'[а-яА-Яa-zA-Z0-9]+')
     frequency_dictionary = Counter()
     for messages in message_list:
@@ -50,7 +50,7 @@ def get_word_frequency(message_list):
         words_list = messages.split(' ')
         for words in words_list:
             word = words.lower()
-            if word in common_words_list:
+            if word in stop_words_list:
                 continue
             if clean_word.search(word):
                 word = clean_word.search(word).group()
@@ -185,18 +185,18 @@ def sort_dictionary(dictionary, sort_by='value'):
 def preprocess_data(data):
     # filters out only the messages
     filtered_data = list(filter(lambda x: x['type'] == 'message', data['messages']))
-    return filtered_data
+    discussion_name = data['name']
+    return filtered_data, discussion_name
 
 
 def driver():
     # Read given file
     file_name_with_extension = get_file_name()
-    file_name = file_split.search(file_name_with_extension)[1]
 
     with open(file_name_with_extension) as json_file:
         json_data = json.load(json_file)
     # Collect data
-    json_data = preprocess_data(json_data)
+    json_data, discussion_name = preprocess_data(json_data)
     processed_data = process_data(json_data)
 
     # Sort all Dictionaries here
@@ -211,32 +211,32 @@ def driver():
 
     graphs.bar_graph(
         word_dictionary, 25, 'Uses',
-        'Most used words in ' + str(number_of_messages) + ' messages in ' + file_name,
-        'output/' + file_name + 'word_frequency.png'
+        'Most used words in ' + str(number_of_messages) + ' messages in ' + discussion_name,
+        'output/' + discussion_name + '_word_frequency.png'
     )
-    #
-    graphs.bar_graph(
-        emoji_dictionary, 20, 'Uses',
-        'Most used emojis in ' + str(number_of_messages) + ' messages in ' + file_name,
-        'output/' + file_name + 'emoji_frequency.png'
-    )
+    # emojis do not draw correctly on most systems because the font does not support them, so removing them for now
+    # graphs.bar_graph(
+    #     emoji_dictionary, 20, 'Uses',
+    #     'Most used emojis in ' + str(number_of_messages) + ' messages in ' + file_name,
+    #     'output/' + file_name + 'emoji_frequency.png'
+    # )
     #
     graphs.bar_graph(
         person_dictionary, 20, 'Messages',
-        'Most active person in ' + file_name,
-        'output/' + file_name + '-person_activity.png'
+        'Most active person in ' + discussion_name,
+        'output/' + discussion_name + '_person_activity.png'
     )
     #
     graphs.bar_graph(
         date_dictionary, 20, 'Messages',
-        'Most Messages in ' + file_name,
-        'output/' + file_name + '-date_activity.png'
+        'Most Messages in ' + discussion_name,
+        'output/' + discussion_name + '_date_activity.png'
     )
     #
     graphs.histogram(
         processed_data['time_dictionary'],
-        'Message Frequency Chart in ' + file_name,
-        'output/' + file_name + '-time_activity.png'
+        'Message Frequency Chart in ' + discussion_name,
+        'output/' + discussion_name + '_time_activity.png'
     )
 
 

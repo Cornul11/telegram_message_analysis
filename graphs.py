@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-def bar_graph(dictionary, limit, label, title, fileName):
+def bar_graph(dictionary, limit, label, title, filename):
     x = []
     y = []
     for count, (key, value) in enumerate(dictionary.items()):
@@ -10,10 +10,12 @@ def bar_graph(dictionary, limit, label, title, fileName):
             break
         x.append(key)
         y.append(value)
-    make_bar_graph(x, y, label, title, fileName)
+    make_bar_graph(x, y, label, title, filename)
 
 
 def make_bar_graph(x, y, label, title, save_as):
+    sns.set_style('darkgrid')
+    sns.color_palette('Set2')
     plt.figure(figsize=(10, 6), dpi=160)
     ax = sns.barplot(y, x)
     ax.set_xlabel(label)
@@ -21,21 +23,10 @@ def make_bar_graph(x, y, label, title, save_as):
     plt.tight_layout()
     plt.savefig(save_as)
 
-    # WIP font fixing to make emojis work properly
-    # from matplotlib.font_manager import FontProperties
-    # prop = FontProperties(fname="/home/danny-1/.local/share/fonts/MesloLGS NF Regular.ttf")
-    # plt.rcParams['font.family'] = "MesloLGS NF"
-    # font = {'family': 'MesloLGS NF'}
-    # plt.figure(figsize=(10, 6), dpi=160)
-    # # sns.
-    # ax = sns.barplot(y, x)
-    # ax.set_xlabel(label, fontdict=font)
-    # ax.set_title(title, fontdict=font)
-    # plt.tight_layout()
-    # plt.savefig(save_as)
-
 
 def histogram(dictionary, title, save_as):
+    sns.set_style('darkgrid')
+    sns.color_palette('Set2')
     plt.figure(figsize=(10, 6), dpi=160)
     sns.barplot(
         x=[int(x) for x in dictionary.keys()],
