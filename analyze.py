@@ -1,3 +1,4 @@
+import collections
 import json
 import os
 import re
@@ -182,6 +183,10 @@ def sort_dictionary(dictionary, sort_by='value'):
     return OrderedDict(sorted(dictionary.items(), key=lambda x: x[1], reverse=True))
 
 
+def revert_dictionary(dictionary):
+    return collections.OrderedDict(reversed(list(dictionary.items())))
+
+
 def preprocess_data(data):
     # filters out only the messages
     filtered_data = list(filter(lambda x: x['type'] == 'message', data['messages']))
@@ -204,6 +209,7 @@ def driver():
     emoji_dictionary = OrderedDict(processed_data['emoji_dictionary'].most_common(20))
     person_dictionary = sort_dictionary(processed_data['person_dictionary'])
     date_dictionary = sort_dictionary(processed_data['date_dictionary'])
+    inverse_date_dictionary = revert_dictionary(sort_dictionary(processed_data['date_dictionary']))
     number_of_messages = processed_data['number_of_messages']
 
     if not os.path.exists('output'):
@@ -231,6 +237,12 @@ def driver():
         date_dictionary, 20, 'Messages',
         'Most Messages in ' + discussion_name,
         'output/' + discussion_name + '_date_activity.png'
+    )
+
+    graphs.bar_graph(
+        inverse_date_dictionary, 20, 'Messages',
+        'Least Messages in ' + discussion_name,
+        'output/' + discussion_name + '_inverse_date_activity.png'
     )
     #
     graphs.histogram(
