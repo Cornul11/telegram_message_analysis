@@ -235,7 +235,7 @@ def driver():
     #
     graphs.bar_graph(
         date_dictionary, 20, 'Messages',
-        'Most Messages in ' + discussion_name,
+        'Most Messages with ' + discussion_name,
         'output/' + discussion_name + '_date_activity.png'
     )
 
