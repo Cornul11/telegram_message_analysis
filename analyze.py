@@ -20,11 +20,19 @@ If value exists in the dictionary, increment count. Else add a new entry.
 """
 
 
-def add_to_dictionary(dictionary, value):
-    if value in dictionary:
-        dictionary[value] += 1
+def add_to_dictionary(dictionary, key):
+    if key in dictionary:
+        dictionary[key] += 1
     else:
-        dictionary[value] = 1
+        dictionary[key] = 1
+    return dictionary
+
+
+def add_to_dictionary_value(dictionary, key, value):
+    if key in dictionary:
+        dictionary[key] += value
+    else:
+        dictionary[key] = value
     return dictionary
 
 
@@ -44,18 +52,27 @@ When the entire list of messages is covered, return the frequency dict.
 
 def get_word_frequency(message_list):
     stop_words_list = set(stopwords.words('english'))
-    clean_word = re.compile(r'[а-яА-Яa-zA-Z0-9]+')
+    clean_word_regex = re.compile(r'[а-яА-Яa-zA-Z0-9]+')
     frequency_dictionary = Counter()
     for messages in message_list:
         processed_words = []
         words_list = messages.split(' ')
-        for words in words_list:
-            word = words.lower()
-            if word in stop_words_list:
+        for word in words_list:
+            # word = replace_diacritics(word)
+
+            # ignore empty strings or letters
+            if len(word) == 0 or len(word) == 1:
                 continue
-            if clean_word.search(word):
-                word = clean_word.search(word).group()
-                processed_words.append(word)
+            regex_result = clean_word_regex.search(word.lower())
+            if regex_result is None:
+                continue
+            else:
+                clean_word = regex_result.group()
+
+            if clean_word in stop_words_list:
+                continue
+            elif clean_word_regex.search(clean_word):
+                processed_words.append(clean_word)
         frequency_dictionary.update(processed_words)
     return frequency_dictionary
 
@@ -118,6 +135,7 @@ def extract_emojis(s):
 def process_data(json_data):
     # Initializing our variables
     number_of_messages = 0
+    total_chars = {}
     date_dictionary = {}
     time_dictionary = {}
     person_dictionary = {}
@@ -143,6 +161,7 @@ def process_data(json_data):
                 for e in emojis:
                     emoji_list.append(e)
                 person_dictionary = add_to_dictionary(person_dictionary, message['from'])
+                total_chars = add_to_dictionary_value(total_chars, message['from'], len(message_text))
 
                 date = message['date']
                 time_found = time_split.search(date)
@@ -167,7 +186,8 @@ def process_data(json_data):
                       'person_dictionary': person_dictionary,
                       'word_dictionary': word_dictionary,
                       'number_of_messages': number_of_messages,
-                      'emoji_dictionary': emoji_dictionary}
+                      'emoji_dictionary': emoji_dictionary,
+                      'total_chars': total_chars}
     return processed_data
 
 
@@ -211,6 +231,7 @@ def driver():
     date_dictionary = sort_dictionary(processed_data['date_dictionary'])
     inverse_date_dictionary = revert_dictionary(sort_dictionary(processed_data['date_dictionary']))
     number_of_messages = processed_data['number_of_messages']
+    total_chars = processed_data['total_chars']
 
     if not os.path.exists('output'):
         os.mkdir('output')
@@ -220,6 +241,7 @@ def driver():
         'Most used words in ' + str(number_of_messages) + ' messages in ' + discussion_name,
         'output/' + discussion_name + '_word_frequency.png'
     )
+
     # emojis do not draw correctly on most systems because the font does not support them, so removing them for now
     # graphs.bar_graph(
     #     emoji_dictionary, 20, 'Uses',
@@ -227,6 +249,15 @@ def driver():
     #     'output/' + file_name + 'emoji_frequency.png'
     # )
     #
+
+    # Prints the most used emojis as alternative to exporting an image with the respective graph
+    for key, value in emoji_dictionary.items():
+        print(key + '\t-> ' + str(value))
+
+    # total chars per user and average chars per msg in the chat
+    for key, value in total_chars.items():
+        print(key + '\t-> total: ' + str(value) + ' avg: ' + str(value / person_dictionary[key]))
+
     graphs.bar_graph(
         person_dictionary, 20, 'Messages',
         'Most active person in ' + discussion_name,
