@@ -3,6 +3,7 @@ import json
 import os
 import re
 import sys
+import datetime
 from collections import Counter, OrderedDict
 
 import emoji
@@ -135,6 +136,7 @@ def extract_emojis(s):
 def process_data(json_data):
     # Initializing our variables
     number_of_messages = 0
+    total_call_length = 0
     total_chars = {}
     date_dictionary = {}
     time_dictionary = {}
@@ -146,36 +148,41 @@ def process_data(json_data):
     # Collecting data into variables
     bar = Bar('Processing', max=len(json_data))
     for message in json_data:
-        if 'sticker emoji' in message:
-            # is a sticker message, ignore
-            pass
-        else:
-            message_text = message['text']
-            if type(message_text) == list:
-                # is most probably a URL, so will ignore for now
+        if message['type'] == 'message':
+            if 'sticker emoji' in message:
+                # is a sticker message, ignore
                 pass
             else:
-                message_list.append(message_text)
+                message_text = message['text']
+                if type(message_text) == list:
+                    # is most probably a URL, so will ignore for now
+                    pass
+                else:
+                    message_list.append(message_text)
 
-                emojis = extract_emojis(message_text)
-                for e in emojis:
-                    emoji_list.append(e)
-                person_dictionary = add_to_dictionary(person_dictionary, message['from'])
-                total_chars = add_to_dictionary_value(total_chars, message['from'], len(message_text))
+                    emojis = extract_emojis(message_text)
+                    for e in emojis:
+                        emoji_list.append(e)
+                    person_dictionary = add_to_dictionary(person_dictionary, message['from'])
+                    total_chars = add_to_dictionary_value(total_chars, message['from'], len(message_text))
 
-                date = message['date']
-                time_found = time_split.search(date)
-                """
-                time_found:
-                index 0 - all the groups concatenated: 2020-12-10T11:28:02
-                index 1 - first group:                 2020-12-10
-                index 2 - second group (ignored):      T
-                index 3 - third group:                 11:28:02
-                """
-                date_dictionary = add_to_dictionary(date_dictionary, time_found[1])
-                message_hour = time_found[3].split(':')[0]
-                time_dictionary = add_to_dictionary(time_dictionary, message_hour)
-                number_of_messages += 1
+                    date = message['date']
+                    time_found = time_split.search(date)
+                    """
+                    time_found:
+                    index 0 - all the groups concatenated: 2020-12-10T11:28:02
+                    index 1 - first group:                 2020-12-10
+                    index 2 - second group (ignored):      T
+                    index 3 - third group:                 11:28:02
+                    """
+                    date_dictionary = add_to_dictionary(date_dictionary, time_found[1])
+                    message_hour = time_found[3].split(':')[0]
+                    time_dictionary = add_to_dictionary(time_dictionary, message_hour)
+                    number_of_messages += 1
+        else:
+            if 'duration_seconds' in message:
+                total_call_length += message['duration_seconds']
+
         bar.next()
     bar.finish()
 
@@ -187,7 +194,8 @@ def process_data(json_data):
                       'word_dictionary': word_dictionary,
                       'number_of_messages': number_of_messages,
                       'emoji_dictionary': emoji_dictionary,
-                      'total_chars': total_chars}
+                      'total_chars': total_chars,
+                      'total_call_length': total_call_length}
     return processed_data
 
 
@@ -208,8 +216,8 @@ def revert_dictionary(dictionary):
 
 
 def preprocess_data(data):
-    # filters out only the messages
-    filtered_data = list(filter(lambda x: x['type'] == 'message', data['messages']))
+    # filters out only the messages or call digests
+    filtered_data = list(filter(lambda x: x['type'] == 'message' or x['type'] == 'service', data['messages']))
     discussion_name = data['name']
     return filtered_data, discussion_name
 
@@ -232,6 +240,7 @@ def driver():
     inverse_date_dictionary = revert_dictionary(sort_dictionary(processed_data['date_dictionary']))
     number_of_messages = processed_data['number_of_messages']
     total_chars = processed_data['total_chars']
+    total_call_data = processed_data['total_call_length']
 
     if not os.path.exists('output'):
         os.mkdir('output')
@@ -257,6 +266,8 @@ def driver():
     # total chars per user and average chars per msg in the chat
     for key, value in total_chars.items():
         print(key + '\t-> total: ' + str(value) + ' avg: ' + str(value / person_dictionary[key]))
+
+    print(str(datetime.timedelta(seconds=total_call_data)))
 
     graphs.bar_graph(
         person_dictionary, 20, 'Messages',
